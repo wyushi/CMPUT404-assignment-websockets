@@ -22,9 +22,21 @@ import time
 import json
 import os
 
+
 app = Flask(__name__, static_url_path='/static')
 sockets = Sockets(app)
 app.debug = True
+clients = list()
+
+class Client:
+    def __init__(self):
+        self.queue = queue.Queue()
+
+    def put(self, v):
+        self.queue.put_nowait(v)
+
+    def get(self):
+        return self.queue.get()
 
 class World:
     def __init__(self):
@@ -59,26 +71,24 @@ class World:
     def world(self):
         return self.space
 
-myWorld = World()        
-
 def set_listener( entity, data ):
     ''' do something with the update ! '''
 
+myWorld = World()  
 myWorld.add_set_listener( set_listener )
         
-
-
 def read_ws(ws,client):
     '''A greenlet function that reads from the websocket and updates the world'''
-    # XXX: TODO IMPLEMENT ME
-    return None
-
-@sockets.route('/subscribe')
-def subscribe_socket(ws):
-    '''Fufill the websocket URL of /subscribe, every update notify the
-       websocket and read updates from the websocket '''
-    # XXX: TODO IMPLEMENT ME
-    return None
+    try:
+        while True:
+            msg = ws.receive()
+            if msg is not None:
+                packet = json.loads(msg)
+                print '-------------------- %s' % packet
+            else:
+                break
+    except:
+        pass
 
 def flask_post_json():
     '''Ah the joys of frameworks! They do so much work for you
@@ -89,6 +99,24 @@ def flask_post_json():
         return json.loads(request.data)
     else:
         return json.loads(request.form.keys()[0])
+
+@sockets.route('/subscribe')
+def subscribe_socket(ws):
+    '''Fufill the websocket URL of /subscribe, every update notify the
+       websocket and read updates from the websocket '''
+    print '----------------- subscribe --------------------'
+    client = Client()
+    clients.append(client)
+    g = gevent.spawn(read_ws, ws, client)
+    try:
+        while True:
+            msg = client.get()
+            ws.send(msg)
+    except Exception as e:
+        print "Websocket Error: %s" % e
+    finally:
+        clients.remove(client)
+        gevent.kill(g)
 
 @app.route('/')
 def hello():
@@ -120,4 +148,6 @@ if __name__ == "__main__":
         and run
         gunicorn -k flask_sockets.worker sockets:app
     '''
-    app.run()
+    print '----------------- run --------------------'
+    # app.run()
+    os.system("bash run.sh");
