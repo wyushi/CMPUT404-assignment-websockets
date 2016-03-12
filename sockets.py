@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 import flask
-from flask import Flask, request
+from flask import Flask, request, redirect
 from flask_sockets import Sockets
 import gevent
 from gevent import queue
@@ -22,7 +22,7 @@ import time
 import json
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static')
 sockets = Sockets(app)
 app.debug = True
 
@@ -66,10 +66,7 @@ def set_listener( entity, data ):
 
 myWorld.add_set_listener( set_listener )
         
-@app.route('/')
-def hello():
-    '''Return something coherent here.. perhaps redirect to /static/index.html '''
-    return None
+
 
 def read_ws(ws,client):
     '''A greenlet function that reads from the websocket and updates the world'''
@@ -83,7 +80,6 @@ def subscribe_socket(ws):
     # XXX: TODO IMPLEMENT ME
     return None
 
-
 def flask_post_json():
     '''Ah the joys of frameworks! They do so much work for you
        that they get in the way of sane operation!'''
@@ -94,27 +90,28 @@ def flask_post_json():
     else:
         return json.loads(request.form.keys()[0])
 
-@app.route("/entity/<entity>", methods=['POST','PUT'])
-def update(entity):
-    '''update the entities via this interface'''
-    return None
-
-@app.route("/world", methods=['POST','GET'])    
-def world():
-    '''you should probably return the world here'''
-    return None
+@app.route('/')
+def hello():
+    return redirect('/static/index.html')
 
 @app.route("/entity/<entity>")    
 def get_entity(entity):
-    '''This is the GET version of the entity interface, return a representation of the entity'''
-    return None
+    return json.dumps(myWorld.get(entity))
 
+@app.route("/entity/<entity>", methods=['POST','PUT'])
+def update(entity):
+    data = flask_post_json()
+    myWorld.set(entity, data)
+    return json.dumps(data)
+
+@app.route("/world", methods=['POST','GET'])    
+def world():
+    return json.dumps(myWorld.world())
 
 @app.route("/clear", methods=['POST','GET'])
 def clear():
-    '''Clear the world out!'''
-    return None
-
+    myWorld.clear()
+    return json.dumps(None)
 
 
 if __name__ == "__main__":
