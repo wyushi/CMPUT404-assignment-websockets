@@ -73,6 +73,9 @@ class World:
 
 def set_listener( entity, data ):
     ''' do something with the update ! '''
+    packet = json.dumps([entity, data])
+    for client in clients:
+        client.put(packet)
 
 myWorld = World()  
 myWorld.add_set_listener( set_listener )
@@ -84,7 +87,7 @@ def read_ws(ws,client):
             msg = ws.receive()
             if msg is not None:
                 packet = json.loads(msg)
-                print '-------------------- %s' % packet
+                myWorld.set(packet[0], packet[1])
             else:
                 break
     except:
@@ -149,5 +152,5 @@ if __name__ == "__main__":
         gunicorn -k flask_sockets.worker sockets:app
     '''
     print '----------------- run --------------------'
-    # app.run()
-    os.system("bash run.sh");
+    app.run()
+    # os.system("bash run.sh");

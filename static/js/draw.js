@@ -12,9 +12,27 @@ var canvas = document.getElementById('c'),
     wscounter = 0,
     socket = null;
 
+console.log(star);
+
 function debug(str) {
     var debugDiv = document.getElementById('debug');
     debugDiv.innerHTML = "" + str;
+}
+
+function requestJSON(url, callback) {
+    var xhr = new XMLHttpRequest();
+
+    xhr.open('GET', url, true);
+    xhr.onload = function () {
+        callback(JSON.parse(this.responseText));
+    };
+    xhr.setRequestHeader("Content-type", "application/json");
+    xhr.setRequestHeader("Accept", "application/json");
+    xhr.send();
+}
+
+function send(data) {
+    socket.send(JSON.stringify(data))
 }
 
 function draw(context, entity) {
@@ -33,7 +51,6 @@ function draw(context, entity) {
     } else {
         context.arc(x, y, (r)?r:50, 0, 10.0 * Math.PI, false);
     }
-
     context.stroke();
 }
 
@@ -97,7 +114,7 @@ function getPosition(e) {
 
 function addEntity(entity, data) {
     world[entity] = data;
-    // TODO
+    send([entity, data]);
 }
 
 function addEntityWithoutName(data) {
@@ -233,26 +250,40 @@ mouse.mousedraggers.push(function(x,y,clicked,e) {
 });
 
 function update() {
-    var url = host + '/world'
-    // TODO
+    drawFrame();
+}
+
+function downloadWorld() {
+    var url = 'http://' + host + "/world";
+    requestJSON(url, function (data) {
+        console.log('----- world downloaded ----')
+        for (var entity in data) {
+            world[entity] = data[entity];
+        }
+        drawNextFrame();
+    });
 }
 
 function wsSetup() {
-    var url = "ws://"+host+"/subscribe";
+    var url = "ws://" + host + "/subscribe";
     console.log(url);
     socket = new WebSocket(url);
+
     socket.onopen = function() {
-        //XXX: TODO What are you going to do here?
         console.log('----- socket open ----');
+        downloadWorld();
     };
+
     socket.onerror = function(msg) {
         debug("WebSocket Error:" + msg.data);
     };
+
     socket.onmessage = function(msg) {  
         try {
             debug("WebSocket Recv:" + msg.data);
-            //XXX: TODO What are you going to do here?
-            console.log('----- msg recv ----');          
+            var packet = JSON.parse(msg.data);
+            world[packet[0]] = packet[1];
+            drawNextFrame();
         } catch (e) {
             alert("socket on message: " + e);
         }
