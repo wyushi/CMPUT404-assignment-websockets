@@ -114,7 +114,9 @@ function getPosition(e) {
 
 function addEntity(entity, data) {
     world[entity] = data;
-    send([entity, data]);
+    var ent = {};
+    ent[entity] = data;
+    send(ent);
 }
 
 function addEntityWithoutName(data) {
@@ -282,12 +284,14 @@ function wsSetup() {
         try {
             debug("WebSocket Recv:" + msg.data);
             var packet = JSON.parse(msg.data);
-            world[packet[0]] = packet[1];
-            drawNextFrame();
+            for (var entity in packet) {
+                world[entity] = packet[entity];
+                drawNextFrame();
+            }
         } catch (e) {
             alert("socket on message: " + e);
         }
-    }; 
+    };
 }
 
 
