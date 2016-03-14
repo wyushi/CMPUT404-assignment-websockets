@@ -16,6 +16,15 @@ pip install ws4py
 
 pip install gunicorn
 
+Tests
+=====
+
+Running tests on Mac, docker host has different IP on Mac. To find it, use
+
+```
+$ ifconfig en0 | grep inet | grep -v inet6 | awk '{print $2}'
+```
+
 Contributors / Licensing
 ========================
 
@@ -52,6 +61,8 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
+Modified by Yushi under same License
+And some code is from 
 [WebSocketsExamples](https://github.com/abramhindle/WebSocketsExamples)
 
 Contributors

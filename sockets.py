@@ -153,5 +153,5 @@ if __name__ == "__main__":
         gunicorn -k flask_sockets.worker sockets:app
     '''
     print '----------------- run --------------------'
-    # app.run()
-    os.system("bash run.sh");
+    app.run()
+    # os.system("bash run.sh");
